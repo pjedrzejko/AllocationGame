@@ -1,0 +1,13 @@
+.map-container {
+    position: relative;
+    display: inline-block;
+}
+
+.distribution-center {
+    position: absolute; /* This is crucial! */
+    width: 30px;        /* Force small size */
+    height: 30px;       /* Force small size */
+    top: 45%;           /* Start with rough positioning */
+    left: 15%;          /* Start with rough positioning */
+    z-index: 10;        /* Make sure it appears on top */
+}
