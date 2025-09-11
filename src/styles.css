@@ -1,13 +1,58 @@
-.map-container {
+body {
+    margin: 0;
+    padding: 20px;
+    background: #f0f0f0;
+    font-family: Arial, sans-serif;
+}
+
+.game-container {
     position: relative;
     display: inline-block;
 }
 
-.distribution-center {
-    position: absolute; /* This is crucial! */
-    width: 30px;        /* Force small size */
-    height: 30px;       /* Force small size */
-    top: 45%;           /* Start with rough positioning */
-    left: 15%;          /* Start with rough positioning */
-    z-index: 10;        /* Make sure it appears on top */
+#gameCanvas {
+    border: 2px solid #333;
+    border-radius: 10px;
+}
+
+.store-control {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #3498db;
+    border-radius: 4px;
+    padding: 3px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    min-width: 50px;
+    z-index: 1000;
+    font-size: 15px;
+}
+
+.forecast-display {
+    text-align: center;
+    font-weight: bold;
+    margin: 1px 0;
+}
+
+.control-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 2px;
+}
+
+.control-btn {
+    background: #3498db;
+    color: white;
+    color: white;
+    border: none;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 15px;
+    margin: 0 1px;
+}
+
+.control-btn:hover {
+    background: #2980b9;
 }
