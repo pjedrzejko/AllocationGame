@@ -3,12 +3,16 @@ const context = gamecanvasID.getContext("2d");
 
 // Load the map image
 const img = new Image();
-img.src = "../assets/supplychainmap.png"; // Fixed path
+img.src = "../assets/supplychainmap.png";
+
+// Load truck image
+const truckImg = new Image();
+truckImg.src = "../assets/truck.png";
 
 const stores = [
-  { id: 'store-1', x: 28, y: 220, forecast: 50 },
+  { id: 'store-1', x: 37, y: 225, forecast: 50 },
   { id: 'store-2', x: 353, y: 35, forecast: 75 },
-  { id: 'store-3', x: 415, y: 200, forecast: 30 },
+  { id: 'store-3', x: 425, y: 205, forecast: 30 },
   { id: 'store-4', x: 630, y: 50, forecast: 50 },
   { id: 'store-5', x: 265, y: 520, forecast: 75 },
   { id: 'store-6', x: 780, y: 245, forecast: 30 },
@@ -16,28 +20,47 @@ const stores = [
   { id: 'store-8', x: 1165, y: 695, forecast: 30 },
   { id: 'store-9', x: 1159, y: 490, forecast: 30 },
   { id: 'store-10', x: 640, y: 680, forecast: 30 },
-  // Add more stores with actual coordinates from your map
 ];
 
+const ship = {
+  id: 'container-ship',
+  x: 20,
+  y: 435,
+  stock: 450,
+  minStock: 300,
+  maxStock: 600
+};
+
+const truckDepot = {
+  x: 100, // Your desired starting X
+  y: 550  // Your desired starting Y
+};
+
+// ADD THIS - Distribution center coordinates (update by clicking on it)
+const distributionCenter = {
+  id: 'distribution-center',
+  x: 440, // Click on your distribution center to get real coordinates
+  y: 500, // Click on your distribution center to get real coordinates
+  stock: 0
+};
+
+// ADD THIS - Animation control variable
+let animationRunning = false;
 
 img.onload = function () {
   console.log("Image loaded successfully!");
   console.log("Original dimensions:", img.width, "x", img.height);
 
-  // Set canvas to match image dimensions exactly
   gamecanvasID.width = img.width;
   gamecanvasID.height = img.height;
-
-  // Draw image at its original size
   context.drawImage(img, 0, 0);
 
   createStoreControls();
+  createShipControl();
 }
 
 function createStoreControls() {
   const controlsContainer = document.getElementById('store-controls');
-
-  // Clear any existing controls first
   controlsContainer.innerHTML = '';
 
   stores.forEach((store, index) => {
@@ -47,21 +70,47 @@ function createStoreControls() {
     controlDiv.style.top = `${store.y}px`;
 
     controlDiv.innerHTML = `
-          <div class="forecast-display">
-              Store ${index + 1}
-          </div>
-          <div class="forecast-display">
-              Forecast: <span id="forecast-${store.id}">${store.forecast}</span>
-          </div>
-
-          <div class="control-buttons">
-              <button class="control-btn" onclick="adjustForecast('${store.id}', -5)">−</button>
-              <button class="control-btn" onclick="adjustForecast('${store.id}', 5)">+</button>
-          </div>
-      `;
+        <div class="forecast-display">
+            ${store.name || `Store ${index + 1}`}
+        </div>
+        <div class="forecast-display">
+            Forecast: <span id="forecast-${store.id}">${store.forecast}</span>
+        </div>
+        <div class="control-buttons">
+            <button class="control-btn" onclick="adjustForecast('${store.id}', -5)">−</button>
+            <button class="control-btn" onclick="adjustForecast('${store.id}', 5)">+</button>
+        </div>
+    `;
 
     controlsContainer.appendChild(controlDiv);
   });
+}
+
+function createShipControl() {
+  const controlsContainer = document.getElementById('store-controls');
+
+  const shipDiv = document.createElement('div');
+  shipDiv.className = 'ship-control';
+  shipDiv.style.left = `${ship.x}px`;
+  shipDiv.style.top = `${ship.y}px`;
+
+  shipDiv.innerHTML = `
+      <div class="forecast-display">
+          Container Ship
+      </div>
+      <div class="forecast-display">
+          Stock: <span id="ship-stock">${ship.stock}</span>
+      </div>
+      <div class="control-buttons">
+          <button class="control-btn" onclick="adjustShipStock(-25)">−</button>
+          <button class="control-btn" onclick="adjustShipStock(25)">+</button>
+      </div>
+      <div class="ship-actions">
+          <button class="receive-btn" onclick="receiveStock()">Receive Stock</button>
+      </div>
+  `;
+
+  controlsContainer.appendChild(shipDiv);
 }
 
 function adjustForecast(storeId, change) {
@@ -70,7 +119,137 @@ function adjustForecast(storeId, change) {
   document.getElementById(`forecast-${storeId}`).textContent = store.forecast;
 
   console.log(`Store ${storeId} forecast updated to ${store.forecast}`);
-  // Add your game logic here
 }
 
+function adjustShipStock(change) {
+  ship.stock = Math.min(ship.maxStock, Math.max(ship.minStock, ship.stock + change));
+  document.getElementById('ship-stock').textContent = ship.stock;
+  console.log(`Ship stock updated to ${ship.stock}`);
+}
 
+function receiveStock() {
+  if (animationRunning) return;
+
+  console.log(`Receiving ${ship.stock} items from ship`);
+  animationRunning = true;
+
+  document.querySelector('.receive-btn').disabled = true;
+  document.querySelector('.receive-btn').textContent = 'Shipping...';
+
+  animateTruckDelivery(ship.stock);
+}
+
+function animateTruckDelivery(stockAmount) {
+  const truck = document.createElement('div');
+  truck.className = 'delivery-truck';
+  truck.style.left = truckDepot.x + 'px';
+  truck.style.top = truckDepot.y + 'px';
+
+  truck.innerHTML = `
+    <img src="../assets/truck.png" class="truck-image" alt="Delivery Truck">
+    <div class="truck-cargo-label">${stockAmount}</div>
+  `;
+
+  document.getElementById('store-controls').appendChild(truck);
+
+  // Define the path waypoints
+  const waypoints = [
+    { x: truckDepot.x, y: truckDepot.y },           // Starting point
+    { x: truckDepot.x + 100, y: truckDepot.y },    // Go right 200px
+    { x: truckDepot.x + 100, y: truckDepot.y - 70 }, // Go up 100px
+    { x: distributionCenter.x, y: distributionCenter.y } // Final destination
+  ];
+
+  let currentWaypointIndex = 0;
+  const segmentDuration = 2000; // 2 seconds per segment
+
+  function animateToNextWaypoint() {
+    if (currentWaypointIndex >= waypoints.length - 1) {
+      onTruckArrived(stockAmount, truck);
+      return;
+    }
+
+    const startPoint = waypoints[currentWaypointIndex];
+    const endPoint = waypoints[currentWaypointIndex + 1];
+
+    const deltaX = endPoint.x - startPoint.x;
+    const deltaY = endPoint.y - startPoint.y;
+    const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
+
+    const startTime = performance.now();
+
+    function animateSegment(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / segmentDuration, 1);
+
+      const currentX = startPoint.x + (deltaX * progress);
+      const currentY = startPoint.y + (deltaY * progress);
+
+      truck.style.left = currentX + 'px';
+      truck.style.top = currentY + 'px';
+      truck.style.transform = `rotate(${angle}deg)`;
+
+      if (progress < 1) {
+        requestAnimationFrame(animateSegment);
+      } else {
+        currentWaypointIndex++;
+        animateToNextWaypoint(); // Move to next segment
+      }
+    }
+
+    requestAnimationFrame(animateSegment);
+  }
+
+  animateToNextWaypoint();
+}
+
+function onTruckArrived(stockAmount, truck) {
+  truck.classList.add('truck-arrived');
+  distributionCenter.stock += stockAmount;
+
+  setTimeout(() => {
+    truck.remove();
+    ship.stock = 450;
+    document.getElementById('ship-stock').textContent = ship.stock;
+
+    document.querySelector('.receive-btn').disabled = false;
+    document.querySelector('.receive-btn').textContent = 'Receive Stock';
+
+    showAllocateButton();
+    animationRunning = false;
+    console.log(`Truck delivered ${stockAmount} items. DC stock: ${distributionCenter.stock}`);
+  }, 800);
+}
+
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+function showAllocateButton() {
+  const existingBtn = document.getElementById('allocate-btn');
+  if (existingBtn) existingBtn.remove();
+
+  const allocateBtn = document.createElement('button');
+  allocateBtn.id = 'allocate-btn';
+  allocateBtn.className = 'allocate-btn';
+  allocateBtn.textContent = `Allocate ${distributionCenter.stock} items`;
+  allocateBtn.onclick = allocateStock;
+
+  allocateBtn.style.position = 'absolute';
+  allocateBtn.style.left = distributionCenter.x + 'px';
+  allocateBtn.style.top = (distributionCenter.y - 40) + 'px';
+
+  document.getElementById('store-controls').appendChild(allocateBtn);
+}
+
+function allocateStock() {
+  console.log('Allocating stock to stores based on forecasts...');
+}
+
+// Click handler to find distribution center coordinates
+gamecanvasID.addEventListener('click', function(e) {
+  const rect = gamecanvasID.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  console.log(`Clicked at: x: ${Math.round(x)}, y: ${Math.round(y)}`);
+});

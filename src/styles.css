@@ -18,11 +18,11 @@ body {
 .store-control {
     position: absolute;
     background: rgba(255, 255, 255, 0.9);
-    border: 1px solid #3498db;
+    border: 3px solid #3498db;
     border-radius: 4px;
     padding: 3px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    min-width: 50px;
+    min-width: 5px;
     z-index: 1000;
     font-size: 15px;
 }
@@ -43,16 +43,109 @@ body {
 .control-btn {
     background: #3498db;
     color: white;
-    color: white;
     border: none;
-    width: 15px;
-    height: 15px;
+    width: 25px;           /* Made bigger to fit the text */
+    height: 25px;          /* Made bigger to fit the text */
     border-radius: 50%;
     cursor: pointer;
     font-size: 15px;
     margin: 0 1px;
+    display: flex;         /* Added for perfect centering */
+    align-items: center;   /* Centers vertically */
+    justify-content: center; /* Centers horizontally */
+    padding: 0;            /* Remove any default padding */
 }
 
 .control-btn:hover {
     background: #2980b9;
 }
+
+.ship-control {
+    position: absolute;
+    background: rgba(135, 206, 250, 0.9); /* Light blue for ship */
+    border: 3px solid #1e90ff;
+    border-radius: 4px;
+    padding: 3px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    min-width: 80px;
+    z-index: 1000;
+    font-size: 15px;
+}
+
+.ship-actions {
+    margin-top: 5px;
+    text-align: center;
+}
+
+.receive-btn {
+    background: #ff6b35;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.receive-btn:hover {
+    background: #e55a2b;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.delivery-truck {
+    position: absolute;
+    z-index: 2000;
+    transform-origin: center;
+    transition: transform 0.1s ease;
+    pointer-events: none;
+}
+
+.truck-image {
+    width: 40px;          /* Make truck small */
+    height: auto;         /* Maintain aspect ratio */
+    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+}
+
+.truck-cargo-label {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ff6b35;
+    color: white;
+    border: 1px solid #e55a2b;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: bold;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    white-space: nowrap;
+}
+
+.truck-arrived .truck-image {
+    animation: truckArrival 0.8s ease-out;
+}
+
+@keyframes truckArrival {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(0.9); opacity: 0.7; }
+}
+
+
+
+
+
