@@ -22,8 +22,6 @@ const stores = [
   { id: 'store-10', x: 640, y: 680, forecast: 30 },
 ];
 
-
-
 const ship = {
   id: 'container-ship',
   x: 20,
@@ -45,7 +43,97 @@ const distributionCenter = {
   stock: 0
 };
 
+// Define custom routes for each store - CUSTOMIZE THESE!
+const storeRoutes = {
+  'store-1': [
+    { x: 490, y: 520 },
+    { x: 200, y: 500 },
+    { x: 130, y: 380 }
+  ],
+  'store-2': [
+    { x: 440, y: 500 },
+    { x: 440, y: 100 },
+    { x: 353, y: 100 },
+    { x: 353, y: 35 }
+  ],
+  'store-3': [
+    { x: 440, y: 500 },
+    { x: 440, y: 205 },
+    { x: 425, y: 205 }
+  ],
+  'store-4': [
+    { x: 440, y: 500 },
+    { x: 630, y: 500 },
+    { x: 630, y: 50 }
+  ],
+  'store-5': [
+    { x: 440, y: 500 },
+    { x: 265, y: 500 },
+    { x: 265, y: 520 }
+  ],
+  'store-6': [
+    { x: 440, y: 500 },
+    { x: 780, y: 500 },
+    { x: 780, y: 245 }
+  ],
+  'store-7': [
+    { x: 440, y: 500 },
+    { x: 1205, y: 500 },
+    { x: 1205, y: 240 }
+  ],
+  'store-8': [
+    { x: 440, y: 500 },
+    { x: 1165, y: 500 },
+    { x: 1165, y: 695 }
+  ],
+  'store-9': [
+    { x: 440, y: 500 },
+    { x: 1159, y: 500 },
+    { x: 1159, y: 490 }
+  ],
+  'store-10': [
+    { x: 440, y: 500 },
+    { x: 640, y: 500 },
+    { x: 640, y: 680 }
+  ]
+};
+
 let animationRunning = false;
+let showRouteMarkers = true; // Set to false to hide markers
+
+function drawRouteMarkers() {
+  if (!showRouteMarkers) return;
+
+  Object.keys(storeRoutes).forEach(storeId => {
+    const route = storeRoutes[storeId];
+
+    route.forEach((waypoint, index) => {
+      // Draw circle for each waypoint
+      context.beginPath();
+      context.arc(waypoint.x, waypoint.y, 5, 0, 2 * Math.PI);
+      context.fillStyle = index === 0 ? '#00ff00' : (index === route.length - 1 ? '#ff0000' : '#ffff00');
+      context.fill();
+      context.strokeStyle = '#000';
+      context.lineWidth = 1;
+      context.stroke();
+
+      // Draw waypoint label
+      context.fillStyle = '#000';
+      context.font = '10px Arial';
+      context.fillText(`${storeId}-${index}`, waypoint.x + 8, waypoint.y - 8);
+
+      // Draw line to next waypoint
+      if (index < route.length - 1) {
+        context.beginPath();
+        context.moveTo(waypoint.x, waypoint.y);
+        context.lineTo(route[index + 1].x, route[index + 1].y);
+        context.strokeStyle = '#0000ff';
+        context.lineWidth = 2;
+        context.stroke();
+      }
+    });
+  });
+}
 
 img.onload = function () {
   console.log("Image loaded successfully!");
@@ -54,6 +142,8 @@ img.onload = function () {
   gamecanvasID.width = img.width;
   gamecanvasID.height = img.height;
   context.drawImage(img, 0, 0);
+
+  drawRouteMarkers();
 
   createStoreControls();
   createShipControl();
@@ -220,10 +310,6 @@ function onTruckArrived(stockAmount, truck) {
   }, 800);
 }
 
-function easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3);
-}
-
 function showAllocateButton() {
   const existingBtn = document.getElementById('allocate-btn');
   if (existingBtn) existingBtn.remove();
@@ -264,18 +350,24 @@ function allocateStock() {
 
   distributionCenter.stock = 0;
 
-  allocations.forEach((item, index) => {
-    setTimeout(() => {
-      sendTruckToStore(item.store, item.allocation);
-    }, index * 600);
+  allocations.forEach((item) => {
+    sendTruckToStore(item.store, item.allocation);
   });
 }
 
 function sendTruckToStore(store, amount) {
   const truck = document.createElement('div');
   truck.className = 'delivery-truck';
-  truck.style.left = distributionCenter.x + 'px';
-  truck.style.top = distributionCenter.y + 'px';
+
+  const route = storeRoutes[store.id];
+
+  if (!route || route.length < 2) {
+    console.error(`No route defined for ${store.id}`);
+    return;
+  }
+
+  truck.style.left = route[0].x + 'px';
+  truck.style.top = route[0].y + 'px';
 
   truck.innerHTML = `
     <img src="../assets/truck.png" class="truck-image" alt="Delivery Truck">
@@ -284,42 +376,52 @@ function sendTruckToStore(store, amount) {
 
   document.getElementById('store-controls').appendChild(truck);
 
-  const targetX = store.deliveryX || store.x;
-  const targetY = store.deliveryY || store.y;
+  let currentWaypointIndex = 0;
+  const segmentDuration = 2000;
 
-  const deltaX = targetX - distributionCenter.x;
-  const deltaY = targetY - distributionCenter.y;
-  const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
-
-  const duration = 2500;
-  const startTime = performance.now();
-
-  function animateFrame(currentTime) {
-    const elapsed = currentTime - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    const easedProgress = easeOutCubic(progress);
-
-    const currentX = distributionCenter.x + (deltaX * easedProgress);
-    const currentY = distributionCenter.y + (deltaY * easedProgress);
-
-    truck.style.left = currentX + 'px';
-    truck.style.top = currentY + 'px';
-    truck.style.transform = `rotate(${angle}deg)`;
-
-    if (progress < 1) {
-      requestAnimationFrame(animateFrame);
-    } else {
+  function animateToNextWaypoint() {
+    if (currentWaypointIndex >= route.length - 1) {
       truck.classList.add('truck-arrived');
       setTimeout(() => {
         truck.remove();
         console.log(`Delivered ${amount} items to ${store.id}`);
       }, 500);
+      return;
     }
+
+    const startPoint = route[currentWaypointIndex];
+    const endPoint = route[currentWaypointIndex + 1];
+
+    const deltaX = endPoint.x - startPoint.x;
+    const deltaY = endPoint.y - startPoint.y;
+    const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
+
+    const startTime = performance.now();
+
+    function animateSegment(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / segmentDuration, 1);
+
+      const currentX = startPoint.x + (deltaX * progress);
+      const currentY = startPoint.y + (deltaY * progress);
+
+      truck.style.left = currentX + 'px';
+      truck.style.top = currentY + 'px';
+      truck.style.transform = `rotate(${angle}deg)`;
+
+      if (progress < 1) {
+        requestAnimationFrame(animateSegment);
+      } else {
+        currentWaypointIndex++;
+        animateToNextWaypoint();
+      }
+    }
+
+    requestAnimationFrame(animateSegment);
   }
 
-  requestAnimationFrame(animateFrame);
+  animateToNextWaypoint();
 }
-
 
 gamecanvasID.addEventListener('click', function(e) {
   const rect = gamecanvasID.getBoundingClientRect();
@@ -327,4 +429,3 @@ gamecanvasID.addEventListener('click', function(e) {
   const y = e.clientY - rect.top;
   console.log(`Clicked at: x: ${Math.round(x)}, y: ${Math.round(y)}`);
 });
-
