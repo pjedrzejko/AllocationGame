@@ -22,6 +22,8 @@ const stores = [
   { id: 'store-10', x: 640, y: 680, forecast: 30 },
 ];
 
+
+
 const ship = {
   id: 'container-ship',
   x: 20,
@@ -32,19 +34,17 @@ const ship = {
 };
 
 const truckDepot = {
-  x: 100, // Your desired starting X
-  y: 550  // Your desired starting Y
+  x: 100,
+  y: 550
 };
 
-// ADD THIS - Distribution center coordinates (update by clicking on it)
 const distributionCenter = {
   id: 'distribution-center',
-  x: 440, // Click on your distribution center to get real coordinates
-  y: 500, // Click on your distribution center to get real coordinates
+  x: 440,
+  y: 500,
   stock: 0
 };
 
-// ADD THIS - Animation control variable
 let animationRunning = false;
 
 img.onload = function () {
@@ -152,16 +152,15 @@ function animateTruckDelivery(stockAmount) {
 
   document.getElementById('store-controls').appendChild(truck);
 
-  // Define the path waypoints
   const waypoints = [
-    { x: truckDepot.x, y: truckDepot.y },           // Starting point
-    { x: truckDepot.x + 100, y: truckDepot.y },    // Go right 200px
-    { x: truckDepot.x + 100, y: truckDepot.y - 70 }, // Go up 100px
-    { x: distributionCenter.x, y: distributionCenter.y } // Final destination
+    { x: truckDepot.x, y: truckDepot.y },
+    { x: truckDepot.x + 100, y: truckDepot.y },
+    { x: truckDepot.x + 100, y: truckDepot.y - 70 },
+    { x: distributionCenter.x, y: distributionCenter.y }
   ];
 
   let currentWaypointIndex = 0;
-  const segmentDuration = 2000; // 2 seconds per segment
+  const segmentDuration = 2000;
 
   function animateToNextWaypoint() {
     if (currentWaypointIndex >= waypoints.length - 1) {
@@ -193,7 +192,7 @@ function animateTruckDelivery(stockAmount) {
         requestAnimationFrame(animateSegment);
       } else {
         currentWaypointIndex++;
-        animateToNextWaypoint(); // Move to next segment
+        animateToNextWaypoint();
       }
     }
 
@@ -243,13 +242,89 @@ function showAllocateButton() {
 }
 
 function allocateStock() {
+  if (distributionCenter.stock === 0) {
+    alert('No stock available to allocate!');
+    return;
+  }
+
   console.log('Allocating stock to stores based on forecasts...');
+
+  const allocateBtn = document.getElementById('allocate-btn');
+  if (allocateBtn) allocateBtn.remove();
+
+  const totalDemand = stores.reduce((sum, store) => sum + store.forecast, 0);
+
+  const allocations = stores.map(store => {
+    const allocation = Math.min(
+      Math.floor((store.forecast / totalDemand) * distributionCenter.stock),
+      store.forecast
+    );
+    return { store, allocation };
+  }).filter(item => item.allocation > 0);
+
+  distributionCenter.stock = 0;
+
+  allocations.forEach((item, index) => {
+    setTimeout(() => {
+      sendTruckToStore(item.store, item.allocation);
+    }, index * 600);
+  });
 }
 
-// Click handler to find distribution center coordinates
+function sendTruckToStore(store, amount) {
+  const truck = document.createElement('div');
+  truck.className = 'delivery-truck';
+  truck.style.left = distributionCenter.x + 'px';
+  truck.style.top = distributionCenter.y + 'px';
+
+  truck.innerHTML = `
+    <img src="../assets/truck.png" class="truck-image" alt="Delivery Truck">
+    <div class="truck-cargo-label">${amount}</div>
+  `;
+
+  document.getElementById('store-controls').appendChild(truck);
+
+  const targetX = store.deliveryX || store.x;
+  const targetY = store.deliveryY || store.y;
+
+  const deltaX = targetX - distributionCenter.x;
+  const deltaY = targetY - distributionCenter.y;
+  const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
+
+  const duration = 2500;
+  const startTime = performance.now();
+
+  function animateFrame(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const easedProgress = easeOutCubic(progress);
+
+    const currentX = distributionCenter.x + (deltaX * easedProgress);
+    const currentY = distributionCenter.y + (deltaY * easedProgress);
+
+    truck.style.left = currentX + 'px';
+    truck.style.top = currentY + 'px';
+    truck.style.transform = `rotate(${angle}deg)`;
+
+    if (progress < 1) {
+      requestAnimationFrame(animateFrame);
+    } else {
+      truck.classList.add('truck-arrived');
+      setTimeout(() => {
+        truck.remove();
+        console.log(`Delivered ${amount} items to ${store.id}`);
+      }, 500);
+    }
+  }
+
+  requestAnimationFrame(animateFrame);
+}
+
+
 gamecanvasID.addEventListener('click', function(e) {
   const rect = gamecanvasID.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
   console.log(`Clicked at: x: ${Math.round(x)}, y: ${Math.round(y)}`);
 });
+
