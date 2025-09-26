@@ -1,6 +1,9 @@
 const gamecanvasID = document.getElementById("gameCanvas");
 const context = gamecanvasID.getContext("2d");
 
+// Constant truck speed (pixels per millisecond)
+const TRUCK_SPEED = 0.06; // Adjust this to change truck speed
+
 // Load the map image
 const img = new Image();
 img.src = "../assets/supplychainmap.png";
@@ -43,7 +46,7 @@ const distributionCenter = {
   stock: 0
 };
 
-// Define custom routes for each store - CUSTOMIZE THESE!
+// Define custom routes for each store
 const storeRoutes = {
   'store-1': [
     { x: 490, y: 520 },
@@ -51,55 +54,57 @@ const storeRoutes = {
     { x: 130, y: 380 }
   ],
   'store-2': [
-    { x: 440, y: 500 },
-    { x: 440, y: 100 },
-    { x: 353, y: 100 },
-    { x: 353, y: 35 }
+    { x: 510, y: 505 },
+    { x: 600, y: 500 },
+    { x: 600, y: 263 },
+    { x: 454, y: 173 }
   ],
   'store-3': [
-    { x: 440, y: 500 },
-    { x: 440, y: 205 },
-    { x: 425, y: 205 }
+    { x: 518, y: 500 },
+    { x: 602, y: 506 },
+    { x: 588, y: 422 },
+    { x: 505, y: 370 }
+
   ],
   'store-4': [
-    { x: 440, y: 500 },
-    { x: 630, y: 500 },
-    { x: 630, y: 50 }
+    { x: 540, y: 485 },
+    { x: 616, y: 489 },
+    { x: 667, y: 222 }
   ],
   'store-5': [
-    { x: 440, y: 500 },
-    { x: 265, y: 500 },
-    { x: 265, y: 520 }
+    { x: 530, y: 495 },
+    { x: 529, y: 554 },
+    { x: 368, y: 650 }
   ],
   'store-6': [
-    { x: 440, y: 500 },
-    { x: 780, y: 500 },
-    { x: 780, y: 245 }
+    { x: 550, y: 480 },
+    { x: 705, y: 491 },
+    { x: 797, y: 383 }
   ],
   'store-7': [
-    { x: 440, y: 500 },
-    { x: 1205, y: 500 },
-    { x: 1205, y: 240 }
+    { x: 560, y: 475 },
+    { x: 1100, y: 475 },
+    { x: 1220, y: 376 }
   ],
   'store-8': [
-    { x: 440, y: 500 },
-    { x: 1165, y: 500 },
-    { x: 1165, y: 695 }
+    { x: 570, y: 470 },
+    { x: 1047, y: 646 },
+    { x: 1188, y: 789 }
   ],
   'store-9': [
-    { x: 440, y: 500 },
-    { x: 1159, y: 500 },
-    { x: 1159, y: 490 }
+    { x: 575, y: 465 },
+    { x: 1060, y: 540 },
+    { x: 1176, y: 625 }
   ],
   'store-10': [
-    { x: 440, y: 500 },
-    { x: 640, y: 500 },
-    { x: 640, y: 680 }
+    { x: 500, y: 515 },
+    { x: 586, y: 696 },
+    { x: 657, y: 799 }
   ]
 };
 
 let animationRunning = false;
-let showRouteMarkers = true; // Set to false to hide markers
+let showRouteMarkers = false; // Set to false to hide markers
 
 function drawRouteMarkers() {
   if (!showRouteMarkers) return;
@@ -250,7 +255,6 @@ function animateTruckDelivery(stockAmount) {
   ];
 
   let currentWaypointIndex = 0;
-  const segmentDuration = 2000;
 
   function animateToNextWaypoint() {
     if (currentWaypointIndex >= waypoints.length - 1) {
@@ -263,6 +267,13 @@ function animateTruckDelivery(stockAmount) {
 
     const deltaX = endPoint.x - startPoint.x;
     const deltaY = endPoint.y - startPoint.y;
+
+    // Calculate distance between points
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    // Calculate duration based on distance and constant speed
+    const segmentDuration = distance / TRUCK_SPEED;
+
     const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
 
     const startTime = performance.now();
@@ -377,7 +388,6 @@ function sendTruckToStore(store, amount) {
   document.getElementById('store-controls').appendChild(truck);
 
   let currentWaypointIndex = 0;
-  const segmentDuration = 2000;
 
   function animateToNextWaypoint() {
     if (currentWaypointIndex >= route.length - 1) {
@@ -394,6 +404,13 @@ function sendTruckToStore(store, amount) {
 
     const deltaX = endPoint.x - startPoint.x;
     const deltaY = endPoint.y - startPoint.y;
+
+    // Calculate distance between points
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    // Calculate duration based on distance and constant speed
+    const segmentDuration = distance / TRUCK_SPEED;
+
     const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
 
     const startTime = performance.now();
@@ -423,9 +440,27 @@ function sendTruckToStore(store, amount) {
   animateToNextWaypoint();
 }
 
+// Create coordinate display element
+// const coordDisplay = document.createElement('div');
+coordDisplay.id = 'coord-display';
+coordDisplay.style.position = 'fixed';
+coordDisplay.style.top = '10px';
+coordDisplay.style.right = '10px';
+coordDisplay.style.background = 'rgba(0,0,0,0.8)';
+coordDisplay.style.color = 'white';
+coordDisplay.style.padding = '10px';
+coordDisplay.style.borderRadius = '5px';
+coordDisplay.style.fontFamily = 'monospace';
+coordDisplay.style.fontSize = '14px';
+coordDisplay.style.zIndex = '10000';
+coordDisplay.textContent = 'Click on map to get coordinates';
+document.body.appendChild(coordDisplay);
+
 gamecanvasID.addEventListener('click', function(e) {
   const rect = gamecanvasID.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-  console.log(`Clicked at: x: ${Math.round(x)}, y: ${Math.round(y)}`);
+  const x = Math.round(e.clientX - rect.left);
+  const y = Math.round(e.clientY - rect.top);
+
+  coordDisplay.textContent = `x: ${x}, y: ${y}`;
+  console.log(`{ x: ${x}, y: ${y} },`); // Copy/paste format for routes
 });
